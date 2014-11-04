@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--Author: Bill Mattingly  ®2013 -->
+<!--<link rel=StyleSheet href="pdbstyle.css" type="text/css" media=all>-->
+<title>Completeness Grid Generator</title>
+<script src="d3/d3.v3.min.js"></script>
+<!--<script type="text/javascript" src="jscolor/jscolor.js"></script>-->
+
+</head>
+<body>
+<script>
+			//Width and height
+			var w = 1;
+			var h = 1;
+			
+			var dataColor = d3.rgb(101,128,166);
+			var colorR=101, colorG=128, colorB=166;
+			
+			//var missingColor = d3.rgb(colorR + (255-colorR)*0.75, 
+			//	colorG +(255-colorG)*0.75, colorB + (255-colorB)*0.75);
+
+			var missingColor = d3.rgb(255, 255, 255);
+		
+			var r1 = [];
+			var perc = [];
+			var rows;
+			var body1 = d3.select("body");
+			var body = body1.append("div")
+				.style("position","relative")
+				.style("width","500px")
+				.style("border-radius","10px")
+				.style("border", "2px")
+				.style("border-color","rgb(0,0,0)")
+				.style("border-style","solid")
+				.style("box-shadow", "4px 4px 2px #888888")
+				//.style("height","100px")
+				//.style("background-color","grey")
+				.style("margin","0 auto");
+				
+			var divBoxHeader = body.append("div")
+				.style({"position":"relative",
+				"text-align":"center"})
+				//.append("text")
+				//.attr("id","Dataset")
+				.html("<h2>Completeness Grid Generator</h2>");
+			
+			var divDataset = body.append("div");
+			divDataset.style({"position":"absolute",
+				"top":"65px",
+				"font-weight":"bold",
+				"left":"20px"})
+				//.append("text")
+				.attr("id","Dataset")
+				.text("Dataset:");
+
+			var divObservations = body.append("div");
+			divObservations.style({"position":"absolute",
+				"top":"95px",
+				"left":"20px"})
+				//.append("text")
+				.attr("id","Observations")
+				.text("Observations:");
+
+			var divVariables = body.append("div");
+			divVariables.style({"position":"absolute",
+				"top":"115px",
+				"left":"20px"})
+				//.append("text")
+				.attr("id","Variables")
+				.text("Variables:");
+
+			var divObsNum = body.append("div");
+			divObsNum.style({"position":"absolute",
+				"top":"95px",
+				"left":"130px"})
+				//.append("text")
+				.text("--");
+
+			var divVarNums = body.append("div");
+			divVarNums.style({"position":"absolute",
+				"top":"115px",
+				"left":"130px"})
+				//.append("text")
+				.text("--");
+				
+			var divSelect = body.append("div");
+			divSelect.style({"position" : "absolute",
+				"top" : "65px",
+				"left":"90px"})
+				.attr("id","divSel");
+				
+			// var divButton = body.append("div")
+				// .append("button")
+				// .style("position","absolute")
+				// .style("top","72px")
+				// .style("left", "20px")
+				// .attr("type","button")
+				// .text("Add")				
+
+			var divButton = body.append("div")
+			var divFile = divButton.append("input")
+				.style("position","absolute")
+				.style("top","65px")
+				.style("left", "250px")			
+				.attr("type","file")
+				.attr("id","uploader")
+				//.on("change",fileChange2);
+				
+			//document.getElementById('files').addEventListener('change', fileChange2, false);
+				
+			//var fileSelect = d3.select("body").append("select");
+			var fileSelect = divSelect.append("select")
+				.attr("ID","fileSelect");
+			fileSelect.append("option").attr("value", "sample")
+				.text("sample");
+			// fileSelect.append("option").attr("value", "550ClinicHIVCohortSt")
+				// .text("550ClinicHIVCohortSt");
+			// fileSelect.append("option").attr("value", "BoneAndJointInternat")
+				// .text("BoneAndJointInternat");
+			fileSelect.on("change", fileChange);
+			loadFile("sample");
+			
+			var divCaseID = body.append("div")
+				.style({"position" : "absolute",
+						"top":"120px",
+						"left":"20px"})
+					//.append("text")
+				.text("Observation:");
+					
+			var divIDSelect = body.append("div")
+				.style({"position" : "absolute",
+							"top":"120px",
+							"left":"115px"})
+					
+			var select = divIDSelect.append("select");
+
+			var divPercentComplete = body.append("div")
+				.style({"position" : "absolute",
+						"top":"120px",
+						"left":"20px"})
+					//.append("text")
+				.text("Percent Complete");
+			
+			// var colorText = body.append("div");
+			// colorText.style({"position":"absolute",
+				// "top":"115px",
+				// "font-weight":"bold",
+				// "left":"20px"})
+				// .attr("id","Color")
+				// .text("Color:");
+				
+			// var colorPickDiv = body.append("div")
+				// .append("input")
+				// .attr("class", "color {minS:0.8,pickerClosable:true,valueElement:'myValue',slider:false}")
+				// .style("position","absolute")
+				// .style("top","115px")
+				// .style("left","90px");
+
+			var divBSM = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"left":"25px",
+					"border":"1px solid",
+					"background-color":"black",
+					"height":"200px",
+					"width":"250px"});
+
+
+			var divGSM = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"background-color":"black",
+					"border":"1px solid",
+					"height":"250px",
+					"width":"250px"});
+					
+			// var divBSMLabel = body.append("div")
+			// 	.style("position","absolute")
+			// 	.style("left","20px")
+			// 	.style("text-align","center")
+			// 	//.style("font-family", "Palatino Linotype")
+			// 	//.style("font-weight","bold")
+			// 	.style("font-size","18px")
+			// 	.style("background-color","white")
+			// 	.text("BCG");
+
+			// var divGSMLabel = body.append("div")
+			// 	.style("position","absolute")
+			// 	//.style("left","20px")
+			// 	.style("text-align","center")
+			// 	.style("background-color","white")
+			// 	//.style("font", "15px Times New Roman,serif")
+			// 	//.style("font-weight","bold")
+			// 	.style("font-size","18px")
+			// 	.text("GCG");				
+				
+			// var divColorBSM1 = body.append("div")
+				// .style({"position":"absolute",
+					// "top":"170px",
+					// "background-color":"rgb(101,128,166)",
+					// "height":"20px",
+					// "width":"20px"});
+					
+			var divColorBSM1 = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					//"background-color":"rgb(236, 243, 250)",
+					"height":"20px",
+					"width":"20px"});
+					
+			divColorBSM1.style("background-color", 'rgb(' + Math.floor((colorR + (255-colorR)*0.0)) + ','
+				+ Math.floor((colorG + (255-colorG)*0.0)) + ','
+				+ Math.floor((colorB + (255-colorB)*0.0)) + ')' );
+
+				
+			// var divColorBSM2 = body.append("div")
+				// .style({"position":"absolute",
+					// "top":"200px",
+					// "background-color":"rgb(236, 243, 250)",
+					// "height":"20px",
+					// "width":"20px"});
+					
+			var divColorBSM2 = body.append("div")
+				.style({"position":"absolute",
+					"top":"170px",
+					"background-color":"rgb(255, 255, 255)",
+					"border" : "1px solid",
+					"height":"20px",
+					"width":"20px"});
+					
+			//divColorBSM2.style("background-color", 'rgb(' + Math.floor((colorR + (255-colorR)*0.75)) + ','
+			//	+ Math.floor((colorG + (255-colorG)*0.75)) + ','
+			//	+ Math.floor((colorB + (255-colorB)*0.75)) + ')' );
+
+					
+			var divColorGSM1 = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"background-color":"rgb(101,128,166)",
+					"height":"20px",
+					"width":"20px"});
+					
+			var divColorGSM2 = body.append("div")
+				.style({"position":"absolute",
+					"top":"170px",
+					//"background-color":"rgb(128,255,0)",
+					"height":"20px",
+					"width":"20px"});
+			
+			divColorGSM2.style("background-color", 'rgb(' + Math.floor((colorR + (255-colorR)*0.2)) + ','
+				+ Math.floor((colorG + (255-colorG)*0.2)) + ','
+				+ Math.floor((colorB + (255-colorB)*0.2)) + ')' );
+
+					
+			var divColorGSM3 = body.append("div")
+				.style({"position":"absolute",
+					"top":"200px",
+					//"background-color":"rgb(255,255,0)",
+					"height":"20px",
+					"width":"20px"});	
+					
+			divColorGSM3.style("background-color", 'rgb(' + Math.floor((colorR + (255-colorR)*0.4)) + ','
+				+ Math.floor((colorG + (255-colorG)*0.4)) + ','
+				+ Math.floor((colorB + (255-colorB)*0.4)) + ')' );
+					
+			var divColorGSM4 = body.append("div")
+				.style({"position":"absolute",
+					"top":"230px",
+					//"background-color":"rgb(255,128,0)",
+					"height":"20px",
+					"width":"20px"});
+					
+			divColorGSM4.style("background-color", 'rgb(' + Math.floor((colorR + (255-colorR)*0.6)) + ','
+				+ Math.floor((colorG + (255-colorG)*0.6)) + ','
+				+ Math.floor((colorB + (255-colorB)*0.6)) + ')' );
+					
+			var divColorGSM5 = body.append("div")
+				.style({"position":"absolute",
+					"top":"260px",
+					"background-color":"rgb(255, 255, 255)",
+					"border" : "1px solid",
+					"height":"20px",
+					"width":"20px"});
+					
+			//divColorGSM5.style("background-color", 'rgb(' + Math.floor((colorR + (255-colorR)*0.75)) + ','
+			//	+ Math.floor((colorG + (255-colorG)*0.75)) + ','
+			//	+ Math.floor((colorB + (255-colorB)*0.75)) + ')' );
+
+			//divColorGSM5.style("background-color", 'rgb(255,255,255)');
+					
+			var divCBSM1Lbl = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("Data");
+				
+			var divCBSM1Lb2 = body.append("div")
+				.style({"position":"absolute",
+					"top":"170px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("No Data");
+				
+			var divCGSM1Lbl = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("90 - 100%");
+				
+			var divCGSM1Lb2 = body.append("div")
+				.style({"position":"absolute",
+					"top":"170px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("56 - 90%");
+				
+			var divCGSM1Lb3 = body.append("div")
+				.style({"position":"absolute",
+					"top":"200px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("45 - 55%");
+				
+			var divCGSM1Lb4 = body.append("div")
+				.style({"position":"absolute",
+					"top":"230px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("11 - 44%");
+				
+			var divCGSM1Lb5 = body.append("div")
+				.style({"position":"absolute",
+					"top":"260px",
+					"text-align":"center",
+					"width":"auto",
+					//"font-weight":"bold",
+					"height":"auto"})
+				.text("0 - 10%");
+							
+			var divToolTip = body.append("div")
+				.style({"position": "absolute",
+					"text-align": "center",
+					"word-wrap":"break-word",
+					"line-height":"90%",
+					"width": "auto",
+					"height": "auto",
+					"padding": "2px",
+					"background-color": "white",
+					"box-shadow": "4px 4px 2px #888888",
+					"border-radius":"5px",
+					"border": "2px",
+					"border-color":"rgb(0,0,0)",
+					"border-style":"solid",
+					"pointer-events": "none",
+					"opacity":"0"
+				});	
+			
+			var svg = divBSM.append("svg")
+				.attr("width", w)
+				.attr("height", h);
+
+			var divBSMtxt = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"left":"0px",
+					"height":"200px",
+					"width":"15px"});
+
+			var svgTxt = divBSMtxt.append("svg")
+				.attr("width", 20)
+				.attr("height", h);
+
+			var divGSMtxt = body.append("div")
+				.style({"position":"absolute",
+					"top":"140px",
+					"left":"0px",
+					"height":"200px",
+					"width":"15px"});
+
+			var svgTxt2 = divGSMtxt.append("svg")
+				.attr("width", 20)
+				.attr("height", h);
+				
+			var svg2 = divGSM.append("svg")
+				.attr("width", w)
+				.attr("height", h);
+				
+				
+			var divBSMKey = body.append("div");
+			
+			var divBSMValue = body.append("div");
+			
+			var divGSMKey = body.append("div");
+			
+			var divGSMValue = body.append("div");
+			
+			var field_title = divBSMKey.append("text");			
+			var field_value = divBSMValue.append("text");
+			var field_title_GSM = divGSMKey.append("text");			
+			var field_value_GSM = divGSMValue.append("text");
+
+			var caseName =[];
+			
+			upload_button("uploader", loadFile2);
+
+function upload_button(el, callback) {
+  var uploader = document.getElementById(el);  
+  var reader = new FileReader();
+
+  reader.onload = function(e) {
+    var contents = e.target.result;
+    callback(contents);
+  };
+
+  uploader.addEventListener("change", handleFiles, false);  
+
+  function handleFiles() {
+    //d3.select("#table").text("loading...");
+    var file = this.files[0];
+    reader.readAsText(file);
+  };
+}
+  
+function loadFile(fileName){		
+	d3.csv(fileName + ".csv", function(loadedRows){
+		rows = loadedRows;
+		//determine Case ID literal from csv file
+		var len = d3.entries(rows).length;
+		r1 = [];
+		for(var i=0; i< len; i++){
+			r1[i] = d3.entries(rows[i]);
+		}
+		caseName = [r1[0][0].key ];
+		loadData(loadedRows);
+	});
+}
+
+function loadFile2(fileName){
+	//console.log(fileName);
+	select.selectAll("option").remove();
+	d3.selectAll("rect").remove();
+	d3.selectAll('text').remove();
+	
+	var data = d3.csv.parse(fileName);
+	rows = data;
+	var len = d3.entries(data).length;
+	//console.log(len);
+	r1 = [];
+	for(var i=0; i< len; i++){
+		r1[i] = d3.entries(data[i]);
+	}
+	caseName = [r1[0][0].key ];
+	loadData(data);
+
+	if(document.getElementById("fileSelect").options[1])
+		document.getElementById("fileSelect").options[1].remove();
+	fileSelect.append("option")
+				.attr("value", "Temp")
+				.text("User Dataset");
+	document.getElementById("fileSelect").selectedIndex=1;	
+	
+
+}
+function fileChange(){
+
+	select.selectAll("option").remove();
+	d3.selectAll("rect").remove();
+	d3.selectAll('text').remove();
+	loadFile(this.options[this.selectedIndex].value);
+	document.getElementById("fileSelect").remove(1);//remove temp entry
+}
+
+function fileChange2(evt){
+
+	select.selectAll("option").remove();
+	d3.selectAll("rect").remove();
+	d3.selectAll('text').remove();
+	//loadFile2(this.value);
+	loadFile2(evt.target.files[0]);
+	if(document.getElementById("fileSelect").options[1])
+		document.getElementById("fileSelect").options[1].remove();
+	fileSelect.append("option")
+				.attr("value", "Temp")
+				.text("Local File");
+	document.getElementById("fileSelect").selectedIndex=1;
+	//fileSelect.selectedIndex = 3;
+	//fileSelect.options[3].selected = true;
+}
+			
+function loadData(data){
+
+	var i=0;
+	var j=1;
+	select.selectAll("option")
+		.data(data)
+		.enter()
+		.append("option")
+		.attr("value", function(d){ return i++; })
+		.text(function(d){return d[ caseName[0] ]; });//value
+
+	select.on("change", change); 
+	select.on("keyup", change);
+	select.on("mousewheel", change);
+	// divButton.style("left", document.getElementById("Dataset").offsetWidth
+		// + document.getElementById("divSel").offsetWidth + 50 + "px");
+	createDataBlock(0);
+	createGSM(0);//create first data viz from file immediately	
+}
+
+function createGSM(index){
+	var axes_label=32;
+	var sq = Math.ceil(Math.sqrt(r1[index].length));
+	divGSM.style({"width":sq*8 + "px",
+		"height": ( sq*8) + "px"});
+
+	divGSM.style("left",sq*8 + 155 + "px"); 
+	divColorGSM1.style("left",sq*8 + sq*8 + 150 + 20 + "px");
+	divColorGSM2.style("left",sq*8 + sq*8 + 150 + 20 + "px");
+	divColorGSM3.style("left",sq*8 + sq*8 + 150 + 20 + "px");
+	divColorGSM4.style("left",sq*8 + sq*8 + 150 + 20 + "px");
+	divColorGSM5.style("left",sq*8 + sq*8 + 150 + 20 + "px");
+	
+	divCGSM1Lbl.style("left",sq*8 + sq*8 + 150 + 45 + "px");
+	divCGSM1Lb2.style("left",sq*8 + sq*8 + 150 + 45 + "px");
+	divCGSM1Lb3.style("left",sq*8 + sq*8 + 150 + 45 + "px");
+	divCGSM1Lb4.style("left",sq*8 + sq*8 + 150 + 45 + "px");
+	divCGSM1Lb5.style("left",sq*8 + sq*8 + 150 + 45 + "px");
+
+	//divGSMLabel.style("top", sq*8 + 150 + "px");
+	//divGSMLabel.style("width", sq*8 + "px");
+	//divGSMLabel.style("left", sq*8 + 150 + "px");
+	divObsNum.text(r1.length);
+	divVarNums.text(r1[0].length);
+
+
+	svg2.attr('width', sq*8 +'px')
+	.attr('height', sq*8 + 'px');
+
+	divGSMtxt.style('height', sq*8 + 'px');
+	divGSMtxt.style('left', sq*8 +  135 +'px');
+	svgTxt2.attr('height', sq*8 + 'px');
+	divPercentComplete.style('left', sq*8 + 150 + 'px');
+	divPercentComplete.style("top", sq*8 + 150 + 'px');
+	
+	var count=0;
+	
+ 	r1[0].forEach( function(print, i){
+		for(var j=0; j<r1.length;j++){
+			if(r1[j][i].value=="")
+				count++;
+		}
+
+		var fill;
+		var column_avg = count/r1.length;
+		var color_avg = column_avg;
+		column_avg = 1 - column_avg;
+		perc[i]=column_avg;
+		count=0;
+		fill = d3.rgb(colorR + (255-colorR)*color_avg, 
+		 		colorG +(255-colorG)*color_avg, colorB + (255-colorB)*color_avg);
+		// if(column_avg <= 0.10)
+		// 	fill = missingColor;		//red
+		// else if(column_avg <= 0.44)
+		// 	fill =d3.rgb(colorR + (255-colorR)*0.6, 
+		// 		colorG +(255-colorG)*0.6, colorB + (255-colorB)*0.6);		//orange
+		// else if(column_avg <=0.55)
+		// 	fill = d3.rgb(colorR + (255-colorR)*0.4, 
+		// 		colorG +(255-colorG)*0.4, colorB + (255-colorB)*0.4);		//yellow
+		// else if(column_avg <= 0.90)
+		// 	fill = d3.rgb(colorR + (255-colorR)*0.2, 
+		// 		colorG +(255-colorG)*0.2, colorB + (255-colorB)*0.2);		//light green
+		// else if(column_avg <=1.0)
+		// 	fill = dataColor;			//green
+			
+
+
+		if(i%sq==0 && i%(sq*5)==0){
+
+			svgTxt2.append('text')
+			.attr("x", (i%sq)*8)
+			.attr('y', Math.floor((i/sq) + 1)*8)
+			.attr('width', axes_label)
+			.attr('height', 8)
+			.attr('fill', 'black')
+			.attr('font-size', 8)
+			.style('font-weight', 'bold')
+			.text(i+1);
+		}
+
+
+		svg2.append("rect")
+	   .attr("x",  (i%sq)*8)
+	   .attr("y",Math.floor((i/sq))*8)
+	   .attr("width", 8)
+	   .attr("height",8)
+	   .attr("fill", fill)
+		.on("mouseover", function(d) {
+			var selection = d3.select(this);
+			selection.style("cursor","none");
+			//divGSM.style("cursor","none");
+			selection.style("stroke","black")
+				.style("stroke-width","1");
+			// if(print.value=="")
+				// selection.attr("fill", d3.rgb(255,255,255));
+			// else
+				// selection.attr("fill", d3.rgb(255,255,255));
+			var temp = body1.append("div");
+			temp.style("position","absolute")
+				.style("visibility","hidden")
+				.style("height","auto")
+				.style("width","auto")
+				.html(print.key + "<hr/>" + print.value)
+				.attr("id","ID");
+			var test = document.getElementById("ID");
+			var len = test.offsetWidth;
+			document.body.removeChild(test);			
+			divToolTip.style("opacity", "1");
+			divToolTip.html(print.key + "<hr/>" + (perc[i]*100).toFixed(2) + "%" );
+			//var offset = divToolTip.offsetWidth;
+			//console.log(divToolTip.offsetWidth);
+			if(len >=200)
+				divToolTip.style("width", 200+"px");
+			divToolTip.style("left", (this.x.baseVal.value) + sq*8+ 155 + 8 + "px")
+			.style("top", ((this.y.baseVal.value) + 140) + "px");
+			// divToolTip.style("left", (d3.event.pageX) + 8 + "px")
+			// .style("top", (d3.event.pageY) + "px");
+		})
+		.on("mouseout", function(d) {
+			divToolTip.style("opacity", 0)
+			.style("width","auto");
+			var selection = d3.select(this);
+			selection.attr("fill", fill)
+				.style("stroke-width","0");;
+		});	
+
+	});
+		
+}
+
+function createDataBlock(index){
+	var axes_label=32;
+	var sq = Math.ceil(Math.sqrt(r1[index].length));
+	divBSM.style({"width":sq*8 + "px",
+		"height": (sq*8) + "px"});
+
+	svg.attr('width', sq*8 +'px')
+	.attr('height', sq*8 + 'px');
+
+	divBSMtxt.style('height', sq*8 + 'px');
+	divBSMtxt.style('left', 5 + 'px');
+	svgTxt.attr('height', sq*8 + 'px');
+	//svgTxt.style('left', 5 + 'px');
+	
+	//leave space for text number 32
+	divColorBSM1.style("left",sq*8 + 40 + /*axes_label +*/ "px"); 
+	divCBSM1Lbl.style("left", sq*8 + 65 + /*axes_label +*/ "px");
+	
+	divColorBSM2.style("left",sq*8 + 40 + /*axes_label +*/ "px"); 
+	divCBSM1Lb2.style("left", sq*8 + 65 + /*axes_label + */"px");
+	
+
+	divCaseID.style("top", sq*8 + 150 + 'px');
+	divIDSelect.style('top', sq*8 + 150 + 'px');
+	divIDSelect.style('left', + 110 + 'px');
+
+	divObservations.style('left', sq*8 + 150 + 'px');
+	divVariables.style('left', sq*8 + 150 + 'px');
+	divObsNum.style('left', sq*8 + 150 + 110 + 'px');
+	divVarNums.style('left', sq*8 + 150 + 110 + 'px');
+
+
+	//divBSMLabel.style("top", sq*8 + 150 + "px");
+	//divBSMLabel.style("width", sq*8  + /*axes_label + */"px");
+	
+	body.style("height", sq*8 + 220 + "px");	
+	body.style("width", sq*8 + sq*8 + 270 + /*axes_label +*/ "px");
+	divBoxHeader.style("width", sq*8 + sq*8 + 260 + /*axes_label  +*/ "px");
+		
+	r1[index].forEach( function(print, i) {
+		if(print.value=="")
+			var fill = missingColor;
+		else
+			var fill = dataColor;
+		if(i%sq==0 && i%(sq*5)==0){
+
+			svgTxt.append('text')
+			.attr("x", (i%sq)*8)
+			.attr('y', Math.floor((i/sq) + 1)*8)
+			.attr('width', axes_label)
+			.attr('height', 8)
+			.attr('fill', 'black')
+			.attr('id', 'changeTxt')
+			.attr('font-size', 8)
+			.style('font-weight', 'bold')
+			//.attr('text-anchor', 'start')
+			.text(i+1);
+		}
+		svg.append("rect")
+	   .attr("x",  (i%sq)*8)
+	   .attr("y", Math.floor((i/sq))*8)
+	   .attr("width", 8)
+	   .attr("height",8)
+	   .attr("fill", fill)
+	   .on("mouseover", function(d) {
+			var selection = d3.select(this);
+			//console.log(this.y.baseVal.value);
+			//console.log(selection.x);
+			var printValue;
+			selection.style("cursor","none");
+			//svg.style("cursor","none");
+			selection.style("stroke","black")
+				.style("stroke-width","1");
+
+			if(print.value==""){
+				//selection.attr("fill", d3.rgb(255,255,255));
+				printValue="<b> No Data</b>";
+				}
+				
+			else{
+				//selection.attr("fill", d3.rgb(255,255,255));
+				printValue="<b>" + print.value + "</b>";
+				}
+			var temp = body1.append("div");
+			temp.style("position","absolute")
+				.style("visibility","hidden")
+				.style("height","auto")
+				.style("width","auto")
+				.html(print.key + "<hr/>" + printValue)
+				.attr("id","ID");
+			var test = document.getElementById("ID");
+			var len = test.offsetWidth;
+			document.body.removeChild(test);			
+			divToolTip.style("opacity", "1");
+			divToolTip.html(print.key + "<hr/>" + printValue);
+			//var offset = divToolTip.offsetWidth;
+			//console.log(divToolTip.offsetWidth);
+			//console.log(len/200);
+			if(len >=200)
+				divToolTip.style("width", 200+"px");
+			divToolTip.style("left", (this.x.baseVal.value) + 28 + 5 + "px")
+			.style("top", ((this.y.baseVal.value) + 140) + "px");
+			// divToolTip.style("left", (d3.event.pageX) + 8 + "px")
+			// .style("top", (d3.event.pageY) - ((len/200)*20+40) + "px");
+		})
+		.on("mouseout", function(d) {
+			divToolTip.style("opacity", 0)
+			.style("width","auto");
+			var selection = d3.select(this);
+			selection.attr("fill", fill)
+				.style("stroke-width","0");
+		});		
+
+	});
+}
+
+function change(){
+	//d3.selectAll('text').remove();
+	d3.selectAll('#changeTxt').remove();
+	createDataBlock(+this.options[this.selectedIndex].value);
+
+}
+
+function wordwrap(text, max) {
+    var regex = new RegExp(".{0,"+max+"}(?:\\s|$)","g");
+    var lines = []
+
+    var line
+    while ((line = regex.exec(text))!="") {
+        lines.push(line);
+    } 
+
+    return lines
+}
+
+</script>
+</body>
+</html>
