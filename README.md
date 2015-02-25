@@ -1,7 +1,7 @@
 Completeness
 ============
 
-This project is for visualizing data in the form of a csv file with the d3.js visualization library.  Clone or copy the files into your web server directory.
+This project is for visualizing data in the form of a .csv file with the D3.js visualization library.  Clone or copy the files into your web server directory.
 
 Demo version: http://visualization.ctrsu.org/completeness/index.html
 
