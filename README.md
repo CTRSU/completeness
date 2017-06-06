@@ -5,6 +5,6 @@ This project is for visualizing data in the form of a .csv file with the D3.js v
 
 Demo version: http://visualization.ctrsu.org/completeness/
 
-===
-![](Screen Shot 2014-11-17 at 9.00.26 AM.png)
+
+![logo](Screen Shot 2014-11-17 at 9.00.26 AM.png)
 
